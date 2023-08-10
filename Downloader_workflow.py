@@ -1,5 +1,6 @@
 import os
 import requests
+import zipfile
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 import urllib.parse
@@ -24,10 +25,19 @@ def download_file(url, save_path):
             f.write(url + "\n")
             f.close()
 
+def compress_to_zip(source_folder, output_path):
+    with zipfile.ZipFile(output_path, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zipf:
+        for foldername, subfolders, filenames in os.walk(source_folder):
+            for filename in filenames:
+                file_path = os.path.join(foldername, filename)
+                arcname = os.path.relpath(file_path, source_folder)
+                zipf.write(file_path, arcname)
 
 dir =  os.path.dirname(__file__)
 base_save_dir = dir
 
+output_path = dir
+foldername = ""
 if not os.path.exists(base_save_dir):
     os.makedirs(base_save_dir)
 with open("urls.txt", 'r') as txt_file:
@@ -42,5 +52,11 @@ with open("urls.txt", 'r') as txt_file:
                 continue
             if i == 3:
                 save_path = dir + "/" + urlsplit[i]
+                foldername = urlsplit[i]
             save_path = save_path + "/" + urlsplit[i]
         download_file(url, save_path)
+output_path = dir + "/" + foldername + ".zip"
+os.popen(f"echo output_path={output_path} >> $GITHUB_OUTPUT")
+os.popen(f"echo filename={foldername}.zip >> $GITHUB_OUTPUT")
+compress_to_zip(dir + "/" + foldername, output_path)
+print(f"Compression complete: {output_path}")
