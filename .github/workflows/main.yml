@@ -1,0 +1,53 @@
+name: Archiver_byURL
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python 🏭
+        uses: actions/setup-python@v4
+        with:
+          check-latest: true
+          python-version: '3.x'
+
+      - name: Install Ubuntu Dependencies 🧑‍🏭
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: e2fsprogs attr unzip qemu-utils python3-venv
+          version: 1.0
+
+      - name: Install Python dependencies
+        run: 
+          pip install requests
+
+      - name: Download
+        id: download
+        run: |
+          cd ${{ github.workspace }}
+          python3 Downloader_workflow.py
+      
+      - name: upload result
+        id: result
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ steps.download.outputs.filename }}
+          path: ${{ steps.download.outputs.output_path }}
+          
+      - name: File Checksum ✔️
+        id: hash
+        run: |
+          filedir="${{ steps.download.outputs.output_path }}"
+          md5_hash=$(md5sum "$filedir" | cut -d ' ' -f 1)
+          sha256_hash=$(sha256sum "$filedir" | cut -d ' ' -f 1)
+          md5_hash_lower=$(echo "$md5_hash" | tr '[:upper:]' '[:lower:]')
+          sha256_hash_lower=$(echo "$sha256_hash" | tr '[:upper:]' '[:lower:]')
+          echo "MD5=$md5_hash_lower" >> $GITHUB_OUTPUT
+          echo "SHA256=$sha256_hash_lower" >> $GITHUB_OUTPUT
+          echo "MD5=$md5_hash_lower"
+          echo "SHA256=$sha256_hash_lower"
