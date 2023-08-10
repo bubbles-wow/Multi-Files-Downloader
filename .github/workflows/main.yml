@@ -32,12 +32,19 @@ jobs:
           cd ${{ github.workspace }}
           python3 Downloader_workflow.py
       
-      - name: upload result
-        id: result
+      - name: upload download result
+        id: downloadresult
         uses: actions/upload-artifact@v1
         with:
           name: ${{ steps.download.outputs.filename }}
           path: ${{ steps.download.outputs.output_path }}
+          
+      - name: upload error urls
+        id: errorurls
+        uses: actions/upload-artifact@v1
+        with:
+          name: errorurls.txt
+          path: ${{ github.workspace }}/errorurls.txt
           
       - name: File Checksum ✔️
         id: hash
